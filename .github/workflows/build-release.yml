@@ -14,6 +14,7 @@ jobs:
         with:
           channel: stable
           cache: true
+      - run: flutter create --platforms=android,web --project-name maji_trace .
       - run: flutter pub get
       - run: dart format lib test
       - run: flutter analyze
