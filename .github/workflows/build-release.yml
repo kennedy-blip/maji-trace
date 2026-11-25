@@ -15,6 +15,7 @@ jobs:
           channel: stable
           cache: true
       - run: flutter pub get
+      - run: dart format --output=none --set-exit-if-changed lib test
       - run: flutter analyze
       - run: flutter test
       - run: flutter build web --release
@@ -24,6 +25,9 @@ jobs:
           name: maji-trace-android-apk
           path: build/app/outputs/flutter-apk/app-release.apk
       - uses: softprops/action-gh-release@v2
-        if: startsWith(github.ref, 'refs/tags/')
         with:
+          tag_name: latest
+          name: MajiTrace latest
+          make_latest: true
+          overwrite_files: true
           files: build/app/outputs/flutter-apk/app-release.apk
