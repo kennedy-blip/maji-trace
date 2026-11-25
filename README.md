@@ -26,7 +26,7 @@ flutter run
 flutter pub get
 flutter build web --release
 ```
-Deploy this repository to Vercel with the included `vercel.json`. Build command: `flutter build web --release`; output directory: `build/web`. Ensure the Vercel build environment has Flutter stable installed (or use a custom build image/build pipeline that installs Flutter before invoking the command). Vercel does not include Flutter in its standard runtime by default.
+Deploy this repository to Vercel with the included `vercel.json`. The configured build script installs Flutter stable, generates the web platform scaffold, runs `flutter pub get`, and builds the static site into `build/web`. Vercel's build environment must permit cloning the Flutter SDK; first builds can take longer because the SDK is downloaded.
 
 ## Build Android APK
 ```sh
@@ -34,7 +34,7 @@ flutter build apk --release
 ```
 APK: `build/app/outputs/flutter-apk/app-release.apk`.
 
-GitHub Actions validates/analyzes the project, builds web and APK, and uploads the APK as a workflow artifact. To publish a downloadable release, create and push a version tag, for example `git tag v1.0.0 && git push origin v1.0.0`. Then use the GitHub release asset link in Settings to make it available in-app.
+GitHub Actions generates the Android/web platform scaffolding, formats and analyzes Dart, runs tests, builds web and APK, uploads the APK artifact, and updates the rolling `latest` GitHub Release. The Settings download action opens `https://github.com/kennedy-blip/maji-trace/releases/latest/download/app-release.apk`. The link becomes available after the first successful Actions build.
 
 ## Important operational notes
 - Data is stored locally on the device/browser profile. Clearing browser data or uninstalling the app can remove local records. No cloud synchronization or multi-device replication is included.
