@@ -7,5 +7,6 @@ fi
 export PATH="${FLUTTER_DIR}/bin:${PATH}"
 flutter --version
 flutter config --enable-web
+flutter create --platforms=web --project-name maji_trace .
 flutter pub get
 flutter build web --release
