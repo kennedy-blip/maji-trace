@@ -1,0 +1,8 @@
+import 'package:flutter/material.dart';
+import '../models/records.dart';
+import '../widgets/glass_card.dart';
+class FaultsScreen extends StatelessWidget {
+ const FaultsScreen({super.key,required this.faults,required this.onAdd,required this.onResolve,required this.admin});
+ final List<FaultTicket> faults; final VoidCallback onAdd; final ValueChanged<FaultTicket> onResolve; final bool admin;
+ @override Widget build(BuildContext context)=>ListView(padding:const EdgeInsets.all(18),children:[Row(mainAxisAlignment:MainAxisAlignment.spaceBetween,children:[const Text('Tap & pump faults',style:TextStyle(fontSize:24,fontWeight:FontWeight.w800)),FilledButton.icon(onPressed:onAdd,icon:const Icon(Icons.add),label:const Text('Report'))]),const SizedBox(height:16),if(faults.isEmpty)const GlassCard(child:Text('No fault tickets. Report leaks, broken taps or pump issues here.')),...faults.reversed.map((f)=>Padding(padding:const EdgeInsets.only(bottom:9),child:GlassCard(child:Row(children:[Icon(f.severity=='Urgent'?Icons.warning_amber_rounded:Icons.build_circle,color:f.status=='Resolved'?Colors.green:f.severity=='Urgent'?Colors.red:Colors.orange,size:30),const SizedBox(width:12),Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text(f.issue,style:const TextStyle(fontWeight:FontWeight.bold)),Text('${f.location} • ${f.severity} • ${f.status}'),if(f.repairNotes.isNotEmpty)Text('Repair: ${f.repairNotes}',style:Theme.of(context).textTheme.bodySmall)])),if(admin&&f.status!='Resolved')IconButton(onPressed:()=>onResolve(f),icon:const Icon(Icons.check_circle_outline))]))))]);
+}
