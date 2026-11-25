@@ -18,12 +18,25 @@ class _MajiTraceAppState extends State<MajiTraceApp> {
  bool get admin=>role=='Water Committee Admin';
  @override void initState(){super.initState();_reload();}
  void _reload(){role=store.role;theme=store.theme;tariff=store.tariff;capacity=store.tankCapacity;baseline=store.tankBaseline;sales=store.sales;refills=store.refills;faults=store.faults;}
- double get tankLevel=>(baseline+refills.fold<double>(0,(s,e)=>s+e.liters)-sales.fold<double>(0,(s,e)=>s+e.quantity)).clamp(0,capacity);
+ double get tankLevel=>(baseline+refills.fold<double>(0,(s,e)=>s+e.liters)-sales.fold<double>(0,(s,e)=>s+e.quantity)).clamp(0,capacity).toDouble();
  Future<void> _refresh()async{setState(_reload);}
- Future<void> _sale()async{final f=await _dialog('Record dispensing', [('Customer / account','Walk-in'),('Quantity in litres','20'),('Amount paid (KES)','0'),('Payment mode','Cash')]);if(f==null)return;final q=double.tryParse(f[1])??0,p=double.tryParse(f[2])??0;if(q<=0||p<0)return;final v=[...sales,WaterSale(id:const Uuid().v4(),customer:f[0],quantity:q,unit:'L',unitPrice:tariff,paid:p.clamp(0,q*tariff),paymentMode:f[3],createdAt:DateTime.now())];await store.saveSales(v);await _refresh();}
+ Future<void> _sale()async{final f=await _dialog('Record dispensing', [('Customer / account','Walk-in'),('Quantity in litres','20'),('Amount paid (KES)','0'),('Payment mode','Cash')]);if(f==null)return;final q=double.tryParse(f[1])??0,p=double.tryParse(f[2])??0;if(q<=0||p<0)return;final v=[...sales,WaterSale(id:const Uuid().v4(),customer:f[0],quantity:q,unit:'L',unitPrice:tariff,paid:p.clamp(0,q*tariff).toDouble(),paymentMode:f[3],createdAt:DateTime.now())];await store.saveSales(v);await _refresh();}
  Future<void> _refill()async{final f=await _dialog('Record tank refill',[('Source / supplier','Borehole'),('Litres added','1000'),('Cost (KES)','0'),('Notes','')]);if(f==null)return;final l=double.tryParse(f[1])??0,c=double.tryParse(f[2])??0;if(l<=0)return;await store.saveRefills([...refills,Refill(id:const Uuid().v4(),source:f[0],liters:l,cost:c,createdAt:DateTime.now(),note:f[3])]);await _refresh();}
  Future<void> _fault()async{final f=await _dialog('Report fault',[('Location','Kiosk tap'),('Issue','Leaking tap'),('Severity (Urgent/Routine)','Routine'),('Details','')]);if(f==null)return;await store.saveFaults([...faults,FaultTicket(id:const Uuid().v4(),location:f[0],issue:f[1],severity:f[2].toLowerCase().contains('urgent')?'Urgent':'Routine',status:'Open',createdAt:DateTime.now(),notes:f[3])]);await _refresh();}
- Future<List<String>?> _dialog(String title,List<(String,String)> fields)async{final ctrls=fields.map((e)=>TextEditingController(text:e.$2)).toList();return showDialog<List<String>>(context:context,builder:(ctx)=>AlertDialog(title:Text(title),content:SingleChildScrollView(child:Column(mainAxisSize:MainAxisSize.min,children:List.generate(fields.length,(i)=>Padding(padding:const EdgeInsets.only(bottom:10),child:TextField(controller:ctrls[i],decoration:InputDecoration(labelText:fields[i].$1))))),actions:[TextButton(onPressed:()=>Navigator.pop(ctx),child:const Text('Cancel')),FilledButton(onPressed:()=>Navigator.pop(ctx,ctrls.map((c)=>c.text.trim()).toList()),child:const Text('Save'))]));}
+ Future<List<String>?> _dialog(String title, List<(String,String)> fields) async {
+  final ctrls = fields.map((e) => TextEditingController(text: e.$2)).toList();
+  return showDialog<List<String>>(context: context, builder: (ctx) => AlertDialog(
+    title: Text(title),
+    content: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: List.generate(fields.length, (i) => Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: TextField(controller: ctrls[i], decoration: InputDecoration(labelText: fields[i].$1)),
+    )))),
+    actions: [
+      TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+      FilledButton(onPressed: () => Navigator.pop(ctx, ctrls.map((c) => c.text.trim()).toList()), child: const Text('Save')),
+    ],
+  ));
+ }
  Future<void> _downloadApk() async { final uri=Uri.parse('https://github.com/kennedy-blip/maji-trace/releases/latest/download/app-release.apk'); final ok=await launchUrl(uri,mode:LaunchMode.externalApplication); if(!ok&&mounted)ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('APK release is not available yet. Check the GitHub Actions build.'))); }
  Future<void> _tankConfig((double,double) v) async { await store.setTank(capacity:v.$2,baseline:v.$1); await _refresh(); }
  Future<void> _export()async{final lines=['MAJITRACE LEDGER • ${DateFormat.yMMMd().format(DateTime.now())}','DISPENSING','Customer,Quantity,Unit price,Total,Paid,Balance,Payment'];for(final s in sales){lines.add('${s.customer},${s.quantity},${s.unitPrice},${s.total},${s.paid},${s.balance},${s.paymentMode}');}lines.add('REFILLS');for(final r in refills){lines.add('${r.source},${r.liters},${r.cost},${r.createdAt.toIso8601String()}');}lines.add('FAULTS');for(final f in faults){lines.add('${f.location},${f.issue},${f.severity},${f.status}');}await Clipboard.setData(ClipboardData(text:lines.join('\n')));if(mounted)ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('Ledger CSV copied to clipboard')));}
